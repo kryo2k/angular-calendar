@@ -1271,6 +1271,278 @@
     };
 
     return Day;
+  }])
+
+  /**
+   * DateStore class
+   *
+   * A class for storing records of data with a date property. Also has a method
+   * to query data between a date range using an efficient binary search algorithm.
+   */
+  .factory('DateStore', ['DateRange', function (DateRange) {
+    function DateStore (dateProperty, records) {
+      this._records = [];
+      this.dateProperty = dateProperty || 'date';
+      this.setRecords(records);
+    }
+
+    Object.defineProperties(DateStore.prototype, {
+      records: {
+        get: function() { return this._records.slice(); } // prevents modification of internal _records!
+      },
+      dates: {
+        get: function() { return this._dates.slice(); } // ditto.
+      },
+      length: {
+        get: function() { return this._records.length; }
+      },
+      dateProperty: {
+        get: function () { return this._dateProperty; },
+        set: function (v) {
+          this._dateProperty = v;
+          this.$postUpdate();
+        }
+      }
+    });
+
+    DateStore.prototype.$postUpdate = function () {
+      var prop = this.dateProperty;
+      if(!prop) { return; }
+      this._records.sort(DateStore.sorter(prop));
+      this._dates = this._records.map(function (r) {
+        return r[prop];
+      });
+    };
+    DateStore.prototype.slice = function (start, end) {
+      return this._records.slice(start, end);
+    };
+    DateStore.prototype.clearRecords = function () {
+      this._records.splice(0, this.records.length);
+      this.$postUpdate();
+    };
+    DateStore.prototype.addRecord = function (record) {
+      if(!record || (!angular.isObject(record) && !angular.isArray(record))) {
+        return this;
+      }
+
+      this._records.push(record);
+
+      if(arguments.length === 1) {
+        this.$postUpdate();
+      }
+
+      return this;
+    };
+    DateStore.prototype.addRecords = function (records) {
+      if(!records) {
+        return this;
+      }
+
+      if(!angular.isArray(records)) {
+        records = [records];
+      }
+
+      records.forEach(this.addRecord.bind(this));
+      this.$postUpdate();
+
+      return this;
+    };
+    DateStore.prototype.setRecords = function (records) {
+      this.clearRecords();
+      this.addRecords(records);
+      return this;
+    };
+    DateStore.prototype.queryDateRange = function (range) {
+      if(!range || !range instanceof DateRange) {
+        return this.records;
+      }
+
+      var
+      rangeIndexes = DateStore.binSearchRangeIndexes(range, this.dates);
+
+      if(!rangeIndexes) {
+        return [];
+      }
+
+      return this.slice(rangeIndexes.from, rangeIndexes.to);
+    };
+
+    DateStore.binSearchRangeIndexes = function(range, recordDates) { // performance improvement for queryDateRange
+      if(!range || !range instanceof DateRange || !recordDates || recordDates.length < 2) {
+        return false;
+      }
+
+      var
+      ffrom = DateStore.binarySearchNearestDate(range.from, recordDates),
+      lto   = DateStore.binarySearchNearestDate(range.to,   recordDates);
+
+      return {
+        from: ffrom,
+        to:   lto
+      };
+    };
+
+    DateStore.binarySearchNearestDate = function(date, arrDates) {
+
+      var
+      minIndex = 0,
+      maxIndex = arrDates.length - 1,
+      currentIndex, currentDate;
+
+      while (minIndex <= maxIndex) {
+          currentIndex = (minIndex + maxIndex) / 2 | 0;
+          currentDate = arrDates[currentIndex];
+
+          if (currentDate < date) {
+            minIndex = currentIndex + 1;
+          }
+          else if (currentDate > date) {
+            maxIndex = currentIndex - 1;
+          }
+          else {
+            return currentIndex;
+          }
+      }
+
+      return currentIndex; // returns closest match
+    };
+
+    DateStore.sorter = function (prop, reverse) {
+      prop = prop || 'date';
+      return function (a, b) {
+        if(!a || !b || !a[prop] || !b[prop]) {
+          return false;
+        }
+
+        if(a[prop] > b[prop]) {
+          return !!reverse ? -1 :  1;
+        }
+
+        if(a[prop] < b[prop]) {
+          return !!reverse ?  1 : -1;
+        }
+        return 0;
+      };
+    };
+
+    return DateStore;
+  }])
+
+  /**
+   * join filter function
+   *
+   * A very simple filter for joining an array using a configurable delimiter.
+   */
+  .filter('join', [function () {
+    return function (v, delimiter) {
+      delimiter = delimiter || ', ';
+
+      if(angular.isArray(v)) {
+        return v.join(delimiter);
+      }
+
+      return v;
+    };
+  }])
+
+  /**
+   * time filter function
+   *
+   * Uses the angular date filter to format a Time object.
+   * Supports all TIME format parameters that angular date filter supports.
+   */
+  .filter('time', ['$filter','Time', function ($filter, Time) {
+    var
+    dateFilter = $filter('date'),
+    fullTimeFmt = 'fullTime';
+    return function (v, format) {
+
+      if(!v) {
+        return '';
+      }
+      else if(v instanceof Date) {
+        if(format === fullTimeFmt) {
+          return Time.fromDate(v).toString();
+        }
+
+        return dateFilter(v, format); // use date filter if v = date
+      }
+      else if(!v instanceof Time) {
+        return '';
+      }
+
+      if(format === fullTimeFmt) {
+        return v.toString();
+      }
+
+      return dateFilter(v.toDate(new Date()), format);
+    };
+  }])
+
+  /**
+   * dateRange filter function
+   *
+   * Uses the angular date and join filters to reender a date range to a string.
+   * Supports all format parameters that angular date filter supports.
+   */
+  .filter('dateRange', ['$filter', 'DateRange', function ($filter, DateRange) {
+    var
+    joinFilter = $filter('join'),
+    timeFilter = $filter('time'),
+    dateFilter = $filter('date');
+
+    return function (v, format, toFormat, delimiter) {
+      format    = format    || 'fullDate';
+      toFormat  = toFormat  || format;
+      delimiter = delimiter || ' to ';
+      var items = [];
+
+      if(!v || !v instanceof DateRange) {
+        return '';
+      }
+
+      if(v.from) {
+        items.push(dateFilter(v.from, format));
+      }
+
+      if(v.to) {
+        items.push(dateFilter(v.to, toFormat));
+      }
+
+      return joinFilter(items, delimiter);
+    };
+  }])
+
+  /**
+   * timeRange filter function
+   *
+   * Very similar to the dateRange filter, but for formatting TimeRange objects.
+   */
+  .filter('timeRange', ['$filter','TimeRange', function ($filter, TimeRange) {
+    var
+    joinFilter = $filter('join'),
+    timeFilter = $filter('time');
+
+    return function (v, format, toFormat, delimiter) {
+      delimiter = delimiter || ' to ';
+      format    = format    || 'fullTime';
+      toFormat  = toFormat  || format;
+      if(!v || !v instanceof TimeRange) {
+        return '';
+      }
+
+      var items = [];
+
+      if(v.from) {
+        items.push(timeFilter(v.from, format));
+      }
+
+      if(v.to) {
+        items.push(timeFilter(v.to,   toFormat));
+      }
+
+      return joinFilter(items, delimiter);
+    };
   }]);
 
 })(window, window.angular);
