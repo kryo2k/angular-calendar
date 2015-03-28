@@ -1,10 +1,11 @@
 <!doctype html>
-<html>
+<html ng-app="AngularCalendarApp" ng-strict-di>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Angular Calendar by kryo2k</title>
 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
@@ -12,164 +13,230 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
   </head>
-  <body>
+  <body ng-controller="IndexCtrl">
     <div class="wrapper">
       <header>
         <h1>Angular Calendar</h1>
-        <p>Time and date utilities written as Angular classes.</p>
+        <p>A useful calendar and date utility module for Angular 1.3x.</p>
 
         <p class="view"><a href="https://github.com/kryo2k/angular-calendar">View the Project on GitHub <small>kryo2k/angular-calendar</small></a></p>
-
 
         <ul>
           <li><a href="https://github.com/kryo2k/angular-calendar/zipball/master">Download <strong>ZIP File</strong></a></li>
           <li><a href="https://github.com/kryo2k/angular-calendar/tarball/master">Download <strong>TAR Ball</strong></a></li>
           <li><a href="https://github.com/kryo2k/angular-calendar">View On <strong>GitHub</strong></a></li>
         </ul>
+
+        <h3>
+        <a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h3>
+
+        <h4><a id="bower-installation" class="anchor" href="#bower-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Bower Installation</h4>
+
+        <p><code>bower install angular-calendar-util</code></p>
+
+        <h4><a id="angular-dependency-installation" class="anchor" href="#angular-dependency-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Angular Installation</h4>
+
+        <p><code>angular.module('...', ['angular-calendar'])</code></p>
+
       </header>
       <section>
-        <h1>
-<a id="angular-calendar" class="anchor" href="#angular-calendar" aria-hidden="true"><span class="octicon octicon-link"></span></a>Angular Calendar</h1>
+        <h2>Calendar Example</h2>
 
-<p>A useful calendar and date utility module for Angular 1.3x.</p>
+        <div class="row">
+          <div class="col-sm-8">
+            <div class="well">
 
-<hr>
+              <p class="text-center">
+                <span class="badge pull-right">{{calendar.year}}</span>
+                <b ng-show="calendar.weekSpansMonths" class="month-name">{{calendar.dateRange.from | date:'MMM'}} - {{calendar.dateRange.to | date:'MMMM'}}</b>
+                <b ng-hide="calendar.weekSpansMonths" ng-bind="calendar.dateRange.from | date:'MMMM'" class="month-name"></b>
+              </p>
 
-<h3>
-<a id="module-overview" class="anchor" href="#module-overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Module Overview</h3>
+              <div ng-repeat="date in calendar.weekDates" ng-class="{'text-success': calendar.isToday(date)}">
+                <div>{{date|date:'fullDate'}} <b ng-show="calendar.isToday(date)">Today!</b></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <hr class="visible-xs" />
 
-<p>The purpose of this module was to be able to easily manipulate dates and times in Angular without any other dependencies (date.js, moment, etc). This is still a work in progress, so might be frequently updated till perfected!</p>
+            <dl>
+              <dt>Beginning Of Week <b>{{calendar.beginningOfWeek}}</b></dt>
+              <dd><input type="range" ng-model="calendar.beginningOfWeek" min="0" max="6" step="1" /></dd>
+            </dl>
 
-<h3>
-<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h3>
+            <dl>
+              <dt>Week <b>{{calendar.week}}</b></dt>
+              <dd><input type="range" ng-model="calendar.week" min="1" max="53"  step="1" /></dd>
+            </dl>
 
-<h5>
-<a id="bower-installation" class="anchor" href="#bower-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Bower Installation</h5>
+            <dl>
+              <dt>Year <b>{{calendar.year}}</b></dt>
+              <dd><input type="range" ng-model="calendar.year" min="1970" max="2100"  step="1"/></dd>
+            </dl>
 
-<p><code>bower install angular-calendar-util</code></p>
+            <div ng-hide="calendar.isThisWeek">
+              <button class="btn btn-default" ng-click="calendar.toToday()">Go to this week</button>
+            </div>
+          </div>
+        </div>
 
-<h5>
-<a id="angular-dependency-installation" class="anchor" href="#angular-dependency-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Angular Dependency Installation</h5>
+        <h2>Date Manipulation Example</h2>
+        <form class="form" novalidate>
+          <dl class="form-group">
+            <dt>Sample Date <a href ng-click="resetCurrentDate()"><span class="glyphicon glyphicon-refresh"></span></a></dt>
+            <dd>
+              <span class="help-hint">{{currentDate|date:'fullDate'}}<br />{{currentDate|date:'h:mm:ss.sss a'}}</span>
+            </dd>
+          </dl>
 
-<p><code>angular.module('...', ['angular-calendar'])</code></p>
+          <div class="form-inline">
+            <label>Adjust by offset (supports negative values)</label>
+            <div class="form-group">
+              <input class="form-control" type="number" ng-model="testOffset">
+              <select class="form-control" ng-model="testOffsetMultiplier">
+                <option value="ms">Milli-seconds</option>
+                <option value="sec">Seconds</option>
+                <option value="min">Minutes</option>
+                <option value="hr">Hours</option>
+                <option value="days">Days</option>
+                <option value="week">Weeks</option>
+                <option value="month">Months</option>
+                <option value="year">Years</option>
+              </select>
+            </div>
+            <div class="btn-group form-inline">
+              <button class="btn btn-success" ng-click="currentDate = calendar.dateOffset(testOffset, currentDate, testOffsetMultiplier)">Offset Date</button>
+            </div>
+          </div>
+        </form>
 
-<h3>
-<a id="whats-in-the-box" class="anchor" href="#whats-in-the-box" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's in the box?</h3>
+        <p></p>
 
-<h4>
-<a id="factory-classes" class="anchor" href="#factory-classes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Factory Classes</h4>
+        <hr />
 
-<ul>
-<li>
-<p><code>Calendar(boW, year, week)</code></p>
+        <h3>
+        <a id="module-overview" class="anchor" href="#module-overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Module Overview</h3>
 
-<p>Supports setting the beginning of week day [0 - 6], year and initial week [1 - 53]. Has an internal pointer for current year and week, when changed it updates calculations.</p>
+        <p>The purpose of this module was to be able to easily manipulate dates and times in Angular without any other dependencies (date.js, moment, etc). This is still a work in progress, so might be frequently updated till perfected!</p>
 
-<p>Provides many static date utility functions as well.</p>
-</li>
-<li>
-<p><code>Time(hour, minute, second, msec)</code></p>
+        <h3>
+        <a id="whats-in-the-box" class="anchor" href="#whats-in-the-box" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's in the box?</h3>
 
-<p>Similar to JS Date, but only uses the hour, min, sec, milli. Allows overriding dates with these specific time specs.</p>
-</li>
-<li>
-<p><code>DateRange(from, to)</code></p>
+        <h4>
+        <a id="factory-classes" class="anchor" href="#factory-classes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Factory Classes</h4>
 
-<p>Stores a simple JS date range (2 dates maximum). Automatically makes sure "from" is before "to". Because of this "from" and "to" are read-only properties. To change internal dates, you must use the "setDates(d1, d2)" function.</p>
+        <ul>
+        <li>
+        <p><code>Calendar(boW, year, week)</code></p>
 
-<p>Also provides simple abilities like checking if this range contains a certain date, as well as calculating the distance between two dates. Note, this calculation does NOT take into considerations DST offsets, please use the Calendar class, which does handle this correctly.</p>
-</li>
-<li>
-<p><code>TimeRange(from, to)</code></p>
+        <p>Supports setting the beginning of week day [0 - 6], year and initial week [1 - 53]. Has an internal pointer for current year and week, when changed it updates calculations.</p>
 
-<p>Very similar to DateRange, but for Time classes, instead of Dates. These can be dynamically applied to any date.</p>
-</li>
-<li>
-<p><code>DayGroup(title, range, periods)</code></p>
+        <p>Provides many static date utility functions as well.</p>
+        </li>
+        <li>
+        <p><code>Time(hour, minute, second, msec)</code></p>
 
-<p>Called it this, for lack of a better name. Allows defining a customizable set of TimeRanges. This set can have an arbitrary title and range of time spans. It does NOT check if these ranges overlap, repeat, etc. That's up to the callee.</p>
-</li>
-<li>
-<p><code>Day(groups)</code></p>
+        <p>Similar to JS Date, but only uses the hour, min, sec, milli. Allows overriding dates with these specific time specs.</p>
+        </li>
+        <li>
+        <p><code>DateRange(from, to)</code></p>
 
-<p>Essentially a container for DayGroup classes. Allows applying an arbitrary date against the set of the groups to generate a new simplified group which inherit the date settings while keeping the time ranges defined in the group. This container also keeps track of it's internal range of times (as defined by the group). So when new group(s) are added, the range is updated automatically.</p>
-</li>
-<li>
-<p><code>DateStore(dateProperty, records)</code></p>
+        <p>Stores a simple JS date range (2 dates maximum). Automatically makes sure "from" is before "to". Because of this "from" and "to" are read-only properties. To change internal dates, you must use the "setDates(d1, d2)" function.</p>
 
-<p>A class for storing records of data with a date property. Also has a method to query data between a date range using an efficient binary search algorithm.</p>
-</li>
-</ul>
+        <p>Also provides simple abilities like checking if this range contains a certain date, as well as calculating the distance between two dates. Note, this calculation does NOT take into considerations DST offsets, please use the Calendar class, which does handle this correctly.</p>
+        </li>
+        <li>
+        <p><code>TimeRange(from, to)</code></p>
 
-<h4>
-<a id="services" class="anchor" href="#services" aria-hidden="true"><span class="octicon octicon-link"></span></a>Services</h4>
+        <p>Very similar to DateRange, but for Time classes, instead of Dates. These can be dynamically applied to any date.</p>
+        </li>
+        <li>
+        <p><code>DayGroup(title, range, periods)</code></p>
 
-<ul>
-<li>
-<p>String <code>$padLeft(str, padSize, padWithStr)</code></p>
+        <p>Called it this, for lack of a better name. Allows defining a customizable set of TimeRanges. This set can have an arbitrary title and range of time spans. It does NOT check if these ranges overlap, repeat, etc. That's up to the callee.</p>
+        </li>
+        <li>
+        <p><code>Day(groups)</code></p>
 
-<p>Ability to pad a string on the left with N amount of string characters.</p>
-</li>
-<li>
-<p>Object <code>$numberUtil</code></p>
+        <p>Essentially a container for DayGroup classes. Allows applying an arbitrary date against the set of the groups to generate a new simplified group which inherit the date settings while keeping the time ranges defined in the group. This container also keeps track of it's internal range of times (as defined by the group). So when new group(s) are added, the range is updated automatically.</p>
+        </li>
+        <li>
+        <p><code>DateStore(dateProperty, records)</code></p>
 
-<p>Various number abilities used in classes and other functions.</p>
+        <p>A class for storing records of data with a date property. Also has a method to query data between a date range using an efficient binary search algorithm.</p>
+        </li>
+        </ul>
 
-<p>Be-careful with 'sequence', it can generate a lot of results, and saturate memory.
-It is internally capped to 10,000 records maximum.</p>
-</li>
-</ul>
+        <h4>
+        <a id="services" class="anchor" href="#services" aria-hidden="true"><span class="octicon octicon-link"></span></a>Services</h4>
 
-<h4>
-<a id="filters" class="anchor" href="#filters" aria-hidden="true"><span class="octicon octicon-link"></span></a>Filters</h4>
+        <ul>
+        <li>
+        <p>String <code>$padLeft(str, padSize, padWithStr)</code></p>
 
-<ul>
-<li>
-<p>String <code>join[:delimiter]</code></p>
+        <p>Ability to pad a string on the left with N amount of string characters.</p>
+        </li>
+        <li>
+        <p>Object <code>$numberUtil</code></p>
 
-<p>A very simple filter for joining an array using a configurable delimiter.</p>
-</li>
-<li>
-<p>String <code>time[:format]</code></p>
+        <p>Various number abilities used in classes and other functions.</p>
 
-<p>Uses the angular date filter to format a Time object. Supports all TIME format parameters that angular date filter supports.</p>
-</li>
-<li>
-<p>String <code>dateRange[:format[:toFormat[:delimiter]]]</code></p>
+        <p>Be-careful with 'sequence', it can generate a lot of results, and saturate memory.
+        It is internally capped to 10,000 records maximum.</p>
+        </li>
+        </ul>
 
-<p>Uses the angular date and join filters to reender a date range to a string. Supports all format parameters that angular date filter supports.</p>
-</li>
-<li>
-<p>String <code>timeRange[:format[:toFormat[:delimiter]]]</code></p>
+        <h4>
+        <a id="filters" class="anchor" href="#filters" aria-hidden="true"><span class="octicon octicon-link"></span></a>Filters</h4>
 
-<p>Very similar to the dateRange filter, but for formatting TimeRange objects.</p>
-</li>
-</ul>
+        <ul>
+        <li>
+        <p>String <code>join[:delimiter]</code></p>
 
-<h3>
-<a id="use-cases" class="anchor" href="#use-cases" aria-hidden="true"><span class="octicon octicon-link"></span></a>Use cases</h3>
+        <p>A very simple filter for joining an array using a configurable delimiter.</p>
+        </li>
+        <li>
+        <p>String <code>time[:format]</code></p>
 
-<ul>
-<li>Year week manipulations, taking into consideration DST as well as leap years, etc.</li>
-<li>Date manipulation such as adding/subtracting milliseconds, weeks, months, etc.</li>
-<li>Time, TimeRange, and DateRange objects and more.</li>
-</ul>
+        <p>Uses the angular date filter to format a Time object. Supports all TIME format parameters that angular date filter supports.</p>
+        </li>
+        <li>
+        <p>String <code>dateRange[:format[:toFormat[:delimiter]]]</code></p>
 
-<h3>
-<a id="disclaimer" class="anchor" href="#disclaimer" aria-hidden="true"><span class="octicon octicon-link"></span></a>Disclaimer</h3>
+        <p>Uses the angular date and join filters to reender a date range to a string. Supports all format parameters that angular date filter supports.</p>
+        </li>
+        <li>
+        <p>String <code>timeRange[:format[:toFormat[:delimiter]]]</code></p>
 
-<p>Again, this is a work in progress. More documentation and examples to follow soon. I am not responsible for any damages caused by this software. If you notice any issues, please report them or better yet, fix them and I can pull in patches :-)</p>
+        <p>Very similar to the dateRange filter, but for formatting TimeRange objects.</p>
+        </li>
+        </ul>
 
-<p>Enjoy</p>
+        <h3>
+        <a id="use-cases" class="anchor" href="#use-cases" aria-hidden="true"><span class="octicon octicon-link"></span></a>Use cases</h3>
 
-<p>Hans G. Doller</p>
+        <ul>
+        <li>Year week manipulations, taking into consideration DST as well as leap years, etc.</li>
+        <li>Date manipulation such as adding/subtracting milliseconds, weeks, months, etc.</li>
+        <li>Time, TimeRange, and DateRange objects and more.</li>
+        </ul>
+
+        <h3>
+        <a id="disclaimer" class="anchor" href="#disclaimer" aria-hidden="true"><span class="octicon octicon-link"></span></a>Disclaimer</h3>
+
+        <p>Again, this is a work in progress. More documentation and examples to follow soon. I am not responsible for any damages caused by this software. If you notice any issues, please report them or better yet, fix them and I can pull in patches.</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/kryo2k">kryo2k</a></p>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
+
     <script src="javascripts/scale.fix.js"></script>
-    
+    <script type="text/javascript" src="javascripts/angular.min.js"></script>
+    <script type="text/javascript" src="javascripts/angular-calendar.min.js"></script>
+    <script type="text/javascript" src="javascripts/index.js"></script>
+
   </body>
 </html>
