@@ -9,7 +9,7 @@ The purpose of this module was to be able to easily manipulate dates and times i
 ### Getting Started
 
 ##### Bower Installation
-`bower install angular-calendar`
+`bower install angular-calendar-util`
 
 ##### Angular Dependency Installation
 `angular.module('...', ['angular-calendar'])`
