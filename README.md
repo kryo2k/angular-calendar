@@ -3,6 +3,9 @@ A useful calendar and date utility module for Angular 1.3x.
 
 ---
 
+### Main GitHub Page
+http://kryo2k.github.io/angular-calendar/
+
 ### Module Overview
 The purpose of this module was to be able to easily manipulate dates and times in Angular without any other dependencies (date.js, moment, etc). This is still a work in progress, so might be frequently updated till perfected!
 
@@ -89,8 +92,4 @@ The purpose of this module was to be able to easily manipulate dates and times i
 
 
 ### Disclaimer
-Again, this is a work in progress. More documentation and examples to follow soon. I am not responsible for any damages caused by this software. If you notice any issues, please report them or better yet, fix them and I can pull in patches :-)
-
-Enjoy
-
-Hans G. Doller
+Again, this is a work in progress. More documentation and examples to follow soon. I am not responsible for any damages caused by this software. If you notice any issues, please report them or better yet, fix them and I can pull in patches.
