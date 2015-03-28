@@ -1,0 +1,17 @@
+{
+  "curly": true,
+  "immed": true,
+  "newcap": true,
+  "noarg": true,
+  "sub": true,
+  "boss": true,
+  "eqnull": true,
+  "quotmark": "single",
+  "trailing": true,
+  "undef": true,
+  "browser": true,
+  "jquery": true,
+  "globals": {
+    "angular": false
+  }
+}

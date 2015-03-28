@@ -1,0 +1,16 @@
+{
+  "name": "angular-calendar",
+  "author": "Hans Doller <hans@ticonerd.com>",
+  "version": "0.1.0",
+  "homepage": "https://github.com/kryo2k/angular-calendar",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kryo2k/angular-calendar.git"
+  },
+  "dependencies": {
+    "angular": ">=1.2.*",
+    "json3": "~3.3.1"
+  },
+  "devDependencies": {
+  }
+}
