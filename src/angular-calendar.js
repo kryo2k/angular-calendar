@@ -492,27 +492,6 @@
   })
 
   /**
-   * $clamp function
-   *
-   * Ability maintain numbers with-in a certain range and precision.
-   */
-  .service('$clamp', ['$numberUtil', function ($numberUtil) {
-
-    function clampFloat(n, min, max, precision) {
-      return $numberUtil.clamp(n, min, max, precision);
-    }
-
-    function clampInt(n, min, max) {
-      return $numberUtil.clamp(n, min, max, 0);
-    }
-
-    return {
-      clampInt: clampInt,
-      clampFloat: clampFloat
-    };
-  }])
-
-  /**
    * $numberUtil service class
    *
    * Verious number abilities used in classes and other functions.
@@ -619,9 +598,11 @@
    * Similar to JS Date, but only uses the hour, min, sec, milli. Allows overriding dates
    * with these specific time specs.
    */
-  .factory('Time', ['$padLeft', '$clamp', 'Calendar', function ($padLeft, $clamp, Calendar) {
-    var
-    clampInt = $clamp.clampInt;
+  .factory('Time', ['$padLeft', '$numberUtil', 'Calendar', function ($padLeft, $numberUtil, Calendar) {
+
+    function clampInt(n, min, max) {
+      return $numberUtil.clamp(n, min, max, 0);
+    }
 
     function Time (hour, minute, second, msec) {
 
