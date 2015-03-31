@@ -1358,53 +1358,120 @@
       }
 
       var
-      rangeIndexes = DateStore.binSearchRangeIndexes(range, this.dates);
+      bsRange = DateStore.binarySearchRange(range, this.dates);
 
-      if(!rangeIndexes) {
+      if(!bsRange) {
         return [];
       }
 
-      return this.slice(rangeIndexes.from, rangeIndexes.to);
+      return this.slice(bsRange.start, bsRange.end);
     };
 
-    DateStore.binSearchRangeIndexes = function(range, recordDates) { // performance improvement for queryDateRange
-      if(!range || !range instanceof DateRange || !recordDates || recordDates.length < 2) {
-        return false;
-      }
-
-      var
-      ffrom = DateStore.binarySearchNearestDate(range.from, recordDates),
-      lto   = DateStore.binarySearchNearestDate(range.to,   recordDates);
-
-      return {
-        from: ffrom,
-        to:   lto
-      };
-    };
-
-    DateStore.binarySearchNearestDate = function(date, arrDates) {
+    /**
+    ** Binary search for nearest date in array of date objects.
+    **
+    ** example 1:
+    ** >> 01-01-2000 05:30:00 << with arrDates [
+    **   '01-01-2000 03:00:00',
+    **   '01-01-2000 04:00:00',
+    **   '01-01-2000 05:00:00',
+    **   '01-01-2000 06:00:00'
+    ** ]
+    **
+    ** matches:
+    **   01-01-2000 05:00:00
+    **
+    ** >> 01-01-2000 05:31:00 <<
+    **
+    ** matches:
+    **   01-01-2000 06:00:00
+    **/
+    DateStore.binarySearchNearestDate = function (date, arrDates) {
 
       var
       minIndex = 0,
       maxIndex = arrDates.length - 1,
-      currentIndex, currentDate;
+      currentIndex, currentDate, currentDistance;
+
+      var lDist, lIndex = -1;
 
       while (minIndex <= maxIndex) {
-          currentIndex = (minIndex + maxIndex) / 2 | 0;
-          currentDate = arrDates[currentIndex];
+        currentIndex = (minIndex + maxIndex) / 2 | 0;
+        currentDate = arrDates[currentIndex];
+        currentDistance = Math.abs(date - currentDate);
 
-          if (currentDate < date) {
-            minIndex = currentIndex + 1;
-          }
-          else if (currentDate > date) {
-            maxIndex = currentIndex - 1;
-          }
-          else {
-            return currentIndex;
-          }
+        if (currentDate < date) {
+          minIndex = currentIndex + 1;
+        }
+        else if (currentDate > date) {
+          maxIndex = currentIndex - 1;
+        }
+        else {
+          return currentIndex;
+        }
+
+        if((lDist === undefined) || currentDistance < lDist) {
+          lDist = currentDistance;
+          lIndex = currentIndex;
+        }
       }
 
-      return currentIndex; // returns closest match
+      return lIndex; // returns closest match
+    };
+
+    /**
+    ** Binary search indexes between date range.
+    **/
+    DateStore.binarySearchRange = function (range, dates) {
+      var start, end, min = range.from, max = range.to, centre;
+
+      var low = 0, high = dates.length - 1;
+
+      while (high - low > 1) {
+        centre = Math.floor((high + low) / 2);
+        if (dates[centre] < min) {
+          low = centre;
+        }
+        else {
+          high = centre;
+        }
+      }
+
+      start = low;
+
+      while (start <= high && dates[start] < min) {
+        start++;
+      }
+
+      high = dates.length - 1;
+
+      while (high - low > 1) {
+        centre = Math.floor((high + low) / 2);
+        if (dates[centre] > max) {
+          high = centre;
+        }
+        else {
+          low = centre;
+        }
+      }
+
+      end = high;
+      while (end >= low && dates[end] > max) {
+        end--;
+      }
+
+      var
+      length = end - start + 1;
+
+      if(length === 0) {
+        return false;
+      }
+
+      return {
+        start: start,
+        end: start + length,
+        length: length
+      };
     };
 
     DateStore.sorter = function (prop, reverse) {
